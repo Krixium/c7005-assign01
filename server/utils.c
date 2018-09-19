@@ -1,8 +1,41 @@
 #include "utils.h"
 
+int createAddrFromHostname(struct sockaddr_in *addr, char *hostname, short port)
+{
+    struct hostent *hp;
+    if ((hp = gethostbyname(hostname)) == NULL)
+    {
+        return 0;
+    }
+
+    memset(addr, 0, sizeof(struct sockaddr_in));
+    addr->sin_family = AF_INET;
+    addr->sin_port = htons(LISTEN_PORT);
+    memcpy(hp->h_addr, &addr->sin_addr, hp->h_length);
+
+    return 1;
+}
+
 int createTCPSocket(unsigned int *sd)
 {
     if ((*sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) 
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+int bindListenSocket(unsigned int sd, short port)
+{
+    struct sockaddr_in addr;
+
+    memset(&addr, 0, sizeof(struct sockaddr_in));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if (bind(sd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
     {
         return 0;
     }
@@ -50,56 +83,4 @@ void writeFileToTCPSocket(unsigned int sd, FILE *file)
             send(sd, fileBuffer, FILE_BUFFER_SIZE, 0);
         }
     }
-}
-
-void parseGETResponse(unsigned int sd, FILE *file)
-{
-    int fileSize;
-    int n, bytesToRead;
-    char headerBuffer[5];
-    char dataBuffer[FILE_BUFFER_SIZE];
-    char *ptr;
-
-    memset(headerBuffer, 0, 5);
-    memset(dataBuffer, 0, FILE_BUFFER_SIZE);
-
-    bytesToRead = 5;
-    ptr = headerBuffer;
-
-    while ((n = recv(sd, ptr, bytesToRead, 0)) < bytesToRead)
-    {
-        ptr += n;
-        bytesToRead -= n;
-    }
-
-    if (headerBuffer[0] != STX)
-    {
-        perror("Wrong header");
-        return;
-    }
-
-    fileSize = *(unsigned int *)(headerBuffer + 1);
-
-    while (fileSize > 0)
-    {
-        ptr = dataBuffer;
-        if (fileSize < FILE_BUFFER_SIZE)
-        {
-            bytesToRead = fileSize;
-        }
-        else
-        {
-            bytesToRead = FILE_BUFFER_SIZE;
-        }
-        while ((n = recv(sd, ptr, bytesToRead, 0)) < bytesToRead)
-        {
-            ptr += n;
-            bytesToRead -= n;
-        }
-
-        fwrite(dataBuffer, sizeof(char), n, file);
-
-        fileSize -= FILE_BUFFER_SIZE;
-    }
-    
 }

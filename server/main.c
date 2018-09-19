@@ -5,23 +5,17 @@ int main(int argc, char *argv[])
     pid_t pid;
     unsigned int clientLength;
     unsigned int acceptSocket, newSocket;
-    struct sockaddr_in server, client;
+    struct sockaddr_in client;
 
-    // Create accept socket
+    // create listen socket
     if (!createTCPSocket(&acceptSocket)) 
     {
         perror("Could not create listen socket.");
         exit(1);
     }
-
-    // Create default struct
-    memset((char *)&server, 0, sizeof(struct sockaddr_in));
-    server.sin_family = AF_INET;
-    server.sin_port = htons(LISTEN_PORT);
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    // Bind
-    if (bind(acceptSocket, (struct sockaddr *)&server, sizeof(server)) == -1)
+    
+    // bind
+    if (!bindListenSocket(acceptSocket, LISTEN_PORT))
     {
         perror("Cannot bind socket.");
         exit(1);

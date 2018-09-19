@@ -39,7 +39,7 @@ void handleGET(char *serverAddress, char *filename)
 {
     unsigned int length;
     unsigned int serverSocket, listenSocket, dataSocket;
-    struct sockaddr_in server, recvAddr;
+    struct sockaddr_in serverAddr, recvAddr;
 
     if (!createTCPSocket(&serverSocket))
     {
@@ -47,21 +47,15 @@ void handleGET(char *serverAddress, char *filename)
         return;
     }
 
-    memset(&server, 0, sizeof(struct sockaddr_in));
-    server.sin_family = AF_INET;
-    server.sin_port = htons(LISTEN_PORT);
-
-    struct hostent *hp;
-    if ((hp = gethostbyname(serverAddress)) == NULL)
+    if (!createAddrFromHostname(&serverAddr, serverAddress, LISTEN_PORT))
     {
-        perror("Unknown server");
+        perror("Could not establish host");
         return;
     }
-    memcpy(hp->h_addr, &server.sin_addr, hp->h_length);
 
     printf("Host established\n");
 
-    if (connect(serverSocket, (struct sockaddr *)&server, sizeof(server)) == -1)
+    if (connect(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
     {
         perror("Could not connect");
         close(serverSocket);
@@ -81,12 +75,7 @@ void handleGET(char *serverAddress, char *filename)
         return;
     }
 
-    memset(&recvAddr, 0, sizeof(struct sockaddr_in));
-    recvAddr.sin_family = AF_INET;
-    recvAddr.sin_port = htons(DATA_PORT);
-    recvAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    if (bind(listenSocket, (struct sockaddr *)&recvAddr, sizeof(recvAddr)) == -1)
+    if (!bindListenSocket(listenSocket, DATA_PORT))
     {
         perror("Cannot bind socket");
         return;
@@ -94,8 +83,8 @@ void handleGET(char *serverAddress, char *filename)
 
     listen(listenSocket, 1);
 
-    length = sizeof(server);
-    if ((dataSocket = accept(listenSocket, (struct sockaddr *)&server, &length)) == -1)
+    length = sizeof(recvAddr);
+    if ((dataSocket = accept(listenSocket, (struct sockaddr *)&recvAddr, &length)) == -1)
     {
         perror("Could not accept connection");
         return;
@@ -121,6 +110,58 @@ void sendGETRequest(unsigned int sd, char *filename)
     strcpy(requestPacket + 2, filename);
 
     send(sd, requestPacket, REQUEST_SIZE, 0);
+}
+
+void parseGETResponse(unsigned int sd, FILE *file)
+{
+    int fileSize;
+    int n, bytesToRead;
+    char headerBuffer[5];
+    char dataBuffer[FILE_BUFFER_SIZE];
+    char *ptr;
+
+    memset(headerBuffer, 0, 5);
+    memset(dataBuffer, 0, FILE_BUFFER_SIZE);
+
+    bytesToRead = 5;
+    ptr = headerBuffer;
+
+    while ((n = recv(sd, ptr, bytesToRead, 0)) < bytesToRead)
+    {
+        ptr += n;
+        bytesToRead -= n;
+    }
+
+    if (headerBuffer[0] != STX)
+    {
+        perror("Wrong header");
+        return;
+    }
+
+    fileSize = *(unsigned int *)(headerBuffer + 1);
+
+    while (fileSize > 0)
+    {
+        ptr = dataBuffer;
+        if (fileSize < FILE_BUFFER_SIZE)
+        {
+            bytesToRead = fileSize;
+        }
+        else
+        {
+            bytesToRead = FILE_BUFFER_SIZE;
+        }
+        while ((n = recv(sd, ptr, bytesToRead, 0)) < bytesToRead)
+        {
+            ptr += n;
+            bytesToRead -= n;
+        }
+
+        fwrite(dataBuffer, sizeof(char), n, file);
+
+        fileSize -= FILE_BUFFER_SIZE;
+    }
+    
 }
 
 void handleSEND(char *serverAddress, char *filename)

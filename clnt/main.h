@@ -16,4 +16,6 @@ void handleSEND(char *serverAddress, char *filename);
 
 void sendGETRequest(unsigned int sd, char *filename);
 
+void parseGETResponse(unsigned int sd, FILE *file);
+
 #endif
