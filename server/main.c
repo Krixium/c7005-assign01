@@ -75,7 +75,7 @@ void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)
     }
     else if (buffer[1] == 'S')
     {
-        respondSENDRequest(clientAddress, buffer);
+        respondSENDRequest(clientSocket, clientAddress, buffer);
     }
     else
     {
@@ -94,8 +94,7 @@ void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer)
 
     strcpy(filename, buffer + 2);
 
-    printf("Get request received\n");
-    printf("Filename: %s\n", filename);
+    printf("GET request received, filename: %s\n", filename);
 
     // Open file
     file = fopen(filename, "r");
@@ -158,17 +157,99 @@ void sendFileOverTCP(FILE *file, unsigned int sd)
     printf("File sent\n");
 }
 
-void respondSENDRequest(struct sockaddr_in *clientAddress, char *buffer)
+void respondSENDRequest(unsigned int sd, struct sockaddr_in *clientAddress, char *buffer)
 {
     printf("Send request received\n");
 
+    int length;
+    unsigned int dataSocket;
+    struct sockaddr_in client;
     char filename[256];
-    strcpy(filename, buffer + 2);
-    printf("Filename: %s\n", filename);
+    FILE *file;
 
-    // Create file with filename
+    strcpy(filename, buffer + 2);
+
+    printf("SEND request received, filename: %s\n", filename);
+
+    memcpy(&length, buffer + REQUEST_SIZE - sizeof(unsigned int), sizeof(unsigned int));
+
+    printf("Sending ACK\n");
+
+    if (!createTCPSocket(&dataSocket))
+    {
+        perror("Could not create socket");
+        return;
+    }
 
     // Create connection on port 7006
+    memset(&client, 0, sizeof(struct sockaddr_in));
+    client.sin_family = AF_INET;
+    client.sin_port = htons(DATA_PORT);
+    memcpy(&client.sin_addr, &clientAddress->sin_addr, 8);
+
+    if (connect(dataSocket, (struct sockaddr *)&client, sizeof(client)) == -1)
+    {
+        perror("Could not connect");
+        close(dataSocket);
+        return;
+    }
+    printf("Connected on data port\n");
+
+    printf("Creating new file\n");
+    // Create file with filename
+    file = fopen(filename, "w+");
+
+    printf("Sending ACK\n");
+    sendACK(dataSocket);
 
     // Read and write data to file
+    parseSENDPayload(dataSocket, file, length);
+
+    fclose(file);
+    close(dataSocket);
+}
+
+void sendACK(unsigned int sd)
+{
+    char buffer[2];
+    buffer[0] = STX;
+    buffer[1] = ACK;
+
+    send(sd, buffer, 2, 0);
+}
+
+void parseSENDPayload(unsigned int sd, FILE *file, int length)
+{
+    int n;
+    char headerBuffer;
+    char dataBuffer[FILE_BUFFER_SIZE];
+
+    printf("Reading header\n");
+
+    readFromSocket(sd, &headerBuffer, 1);
+
+    if (headerBuffer != STX)
+    {
+        perror("Invalid header");
+        return;
+    }
+
+    printf("Header validated\n");
+
+    while (length > 0)
+    {
+        memset(dataBuffer, 0, FILE_BUFFER_SIZE);
+
+        if (length < FILE_BUFFER_SIZE)
+        {
+            n = readFromSocket(sd, dataBuffer, length);
+        }
+        else
+        {
+            n = readFromSocket(sd, dataBuffer, FILE_BUFFER_SIZE);
+        }
+
+        fwrite(dataBuffer, sizeof(char), n, file);
+        length -= n;
+    }
 }

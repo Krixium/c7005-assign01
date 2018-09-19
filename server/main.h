@@ -13,6 +13,8 @@
 void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress);
 void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer);
 void sendFileOverTCP(FILE *file, unsigned int sd);
-void respondSENDRequest(struct sockaddr_in *clientAddress, char *buffer);
+void respondSENDRequest(unsigned int sd, struct sockaddr_in *clientAddress, char *buffer);
+void sendACK(unsigned int sd);
+void parseSENDPayload(unsigned int sd, FILE *file, int length);
 
 #endif

@@ -43,22 +43,32 @@ int bindListenSocket(unsigned int sd, short port)
     return 1;
 }
 
-void readFromSocket(unsigned int socket, char * buffer, unsigned int len)
+int readFromSocket(unsigned int socket, char * buffer, unsigned int len)
 {
-    unsigned int n, bytesToRead;
+    int n, bytesToRead, total;
     bytesToRead = len;
 
     char * bufferPointer;
     bufferPointer = buffer;
 
-    while ((n = recv(socket, bufferPointer, bytesToRead, 0)) < len)
+    total = 0;
+    while (1)
     {
+        n = recv(socket, bufferPointer, bytesToRead, 0);
         bufferPointer += n;
         bytesToRead -= n;
+        total += n;
+
+        if (n >= len)
+        {
+            break;
+        }
     }
+
+    return total;
 }
 
-unsigned int getFileSize(FILE *file)
+int getFileSize(FILE *file)
 {
     unsigned int size;
     fseek(file, 0, SEEK_END);
@@ -71,6 +81,8 @@ void writeFileToTCPSocket(unsigned int sd, FILE *file)
 {
     int n;
     char fileBuffer[FILE_BUFFER_SIZE];
+
+    fseek(file, 0, SEEK_SET);
 
     while ((n = fread(fileBuffer, 1, FILE_BUFFER_SIZE, file)) != 0)
     {
