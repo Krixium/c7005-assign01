@@ -71,11 +71,11 @@ void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)
 
     if (buffer[1] == 'G')
     {
-        GETRequest(clientAddress, buffer);
+        respondGETRequest(clientAddress, buffer);
     }
     else if (buffer[1] == 'S')
     {
-        SENDRequest(clientAddress, buffer);
+        respondSENDRequest(clientAddress, buffer);
     }
     else
     {
@@ -85,16 +85,20 @@ void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)
     close(clientSocket);
 }
 
-void GETRequest(struct sockaddr_in *clientAddress, char *buffer)
+void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer)
 {
-    printf("Get request received\n");
-
+    unsigned int dataSocket;
+    struct sockaddr_in client;
+    FILE *file;
     char filename[256];
+
     strcpy(filename, buffer + 2);
+
+    printf("Get request received\n");
     printf("Filename: %s\n", filename);
 
     // Open file
-    FILE *file = fopen(filename, "r");
+    file = fopen(filename, "r");
 
     if (file == 0)
     {
@@ -105,7 +109,6 @@ void GETRequest(struct sockaddr_in *clientAddress, char *buffer)
     printf("File openned\n");
 
     // Create connection on port 7006
-    unsigned int dataSocket;
 
     if (!createTCPSocket(&dataSocket))
     {
@@ -115,7 +118,6 @@ void GETRequest(struct sockaddr_in *clientAddress, char *buffer)
     }
 
     // Connect
-    struct sockaddr_in client;
     memset(&client, 0, sizeof(struct sockaddr_in));
     client.sin_family = AF_INET;
     client.sin_port = htons(DATA_PORT);
@@ -131,18 +133,7 @@ void GETRequest(struct sockaddr_in *clientAddress, char *buffer)
 
     printf("Connected to client\n");
 
-    // create header
-    char header[5];
-    unsigned int fileLength = getFileSize(file);
-    header[0] = STX;
-    memcpy(header + 1, &fileLength, sizeof(unsigned int));
-
-    // send header
-    send(dataSocket, header, 5, 0);
-    printf("Header sent\n");
-
-    writeFileToTCPSocket(dataSocket, file);
-    printf("File sent\n");
+    sendFileOverTCP(file, dataSocket);
 
     fclose(file);
     printf("File closed\n");
@@ -151,7 +142,23 @@ void GETRequest(struct sockaddr_in *clientAddress, char *buffer)
     printf("Socket closed\n");
 }
 
-void SENDRequest(struct sockaddr_in *clientAddress, char *buffer)
+void sendFileOverTCP(FILE *file, unsigned int sd)
+{
+    // create header
+    char header[5];
+    unsigned int fileLength = getFileSize(file);
+    header[0] = STX;
+    memcpy(header + 1, &fileLength, sizeof(unsigned int));
+
+    // send header
+    send(sd, header, 5, 0);
+    printf("Header sent\n");
+
+    writeFileToTCPSocket(sd, file);
+    printf("File sent\n");
+}
+
+void respondSENDRequest(struct sockaddr_in *clientAddress, char *buffer)
 {
     printf("Send request received\n");
 

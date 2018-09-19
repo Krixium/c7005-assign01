@@ -11,7 +11,8 @@
 #include "utils.h"
 
 void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress);
-void GETRequest(struct sockaddr_in *clientAddress, char *buffer);
-void SENDRequest(struct sockaddr_in *clientAddress, char *buffer);
+void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer);
+void sendFileOverTCP(FILE *file, unsigned int sd);
+void respondSENDRequest(struct sockaddr_in *clientAddress, char *buffer);
 
 #endif

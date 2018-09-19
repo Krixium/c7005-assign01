@@ -37,6 +37,7 @@ void printUsage()
 
 void handleGET(char *serverAddress, char *filename)
 {
+    FILE *file;
     unsigned int length;
     unsigned int serverSocket, listenSocket, dataSocket;
     struct sockaddr_in serverAddr, recvAddr;
@@ -92,7 +93,6 @@ void handleGET(char *serverAddress, char *filename)
 
     close(listenSocket);
 
-    FILE *file;
     file = fopen(filename, "w+");
 
     parseGETResponse(dataSocket, file);
@@ -104,6 +104,7 @@ void handleGET(char *serverAddress, char *filename)
 void sendGETRequest(unsigned int sd, char *filename)
 {
     char requestPacket[REQUEST_SIZE];
+
     memset(requestPacket, 0, REQUEST_SIZE);
     requestPacket[0] = STX;
     requestPacket[1] = 'G';
