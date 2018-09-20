@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef SRVR_H
+#define SRVR_H
 
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "utils.h"
 
+void srvr(int argc, char *argv[]);
 void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress);
 void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer);
 void sendFileOverTCP(FILE *file, unsigned int sd);

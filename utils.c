@@ -1,5 +1,10 @@
 #include "utils.h"
 
+void printUsage()
+{
+    printf("Usage: ./bftp [server_hostname [GET|SEND] file_name]\n");
+}
+
 int createAddrFromHostname(struct sockaddr_in *addr, char *hostname, short port)
 {
     struct hostent *hp;

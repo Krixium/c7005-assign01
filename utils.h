@@ -11,6 +11,7 @@
 
 #include "globals.h"
 
+void printUsage();
 int createAddrFromHostname(struct sockaddr_in *addr, char *hostname, short port);
 int createTCPSocket(unsigned int *sd);
 int bindListenSocket(unsigned int sd, short port);

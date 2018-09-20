@@ -1,6 +1,6 @@
-#include "main.h"
+#include "srvr.h"
 
-int main(int argc, char *argv[])
+void srvr(int argc, char *argv[])
 {
     pid_t pid;
     unsigned int clientLength;
@@ -11,14 +11,14 @@ int main(int argc, char *argv[])
     if (!createTCPSocket(&acceptSocket)) 
     {
         perror("Could not create listen socket.");
-        exit(1);
+        return;
     }
     
     // bind
     if (!bindListenSocket(acceptSocket, LISTEN_PORT))
     {
         perror("Cannot bind socket.");
-        exit(1);
+        return;
     }
 
     // listen
@@ -43,17 +43,13 @@ int main(int argc, char *argv[])
         }
         else if (pid == 0)
         {
-            // Child does work
             serveClient(newSocket, &client);
         }
         else
         {
-            // Parent continues on
             continue;
         }
     }
-
-    return 0;
 }
 
 void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)

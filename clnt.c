@@ -1,14 +1,13 @@
-#include "main.h"
+#include "clnt.h"
 
-
-int main(int argc, char *argv[])
+void clnt(int argc, char *argv[])
 {
     char filename[MAX_FILENAME_SIZE];
 
     if (argc != 4)
     {
         printUsage();
-        exit(0);
+        return;
     }
 
     strcpy(filename, argv[3]);
@@ -24,15 +23,7 @@ int main(int argc, char *argv[])
     else
     {
         printUsage();
-        exit(0);
     }
-
-    exit(0);
-}
-
-void printUsage()
-{
-    printf("Usage: clnt server [GET|SEND] filename\n");
 }
 
 void handleGET(char *serverAddress, char *filename)
