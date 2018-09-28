@@ -16,7 +16,7 @@ int createAddrFromHostname(struct sockaddr_in *addr, char *hostname, short port)
     memset(addr, 0, sizeof(struct sockaddr_in));
     addr->sin_family = AF_INET;
     addr->sin_port = htons(LISTEN_PORT);
-    memcpy(hp->h_addr, &addr->sin_addr, hp->h_length);
+    memcpy(&addr->sin_addr, hp->h_addr, hp->h_length);
 
     return 1;
 }
