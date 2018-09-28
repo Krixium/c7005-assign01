@@ -9,3 +9,12 @@ release:
 
 debug:
 	$(CC) $(CFLAGS) $(DEBUG) -o $(APPNAME) $(FILES)
+
+test:
+	make debug
+	mkdir test
+	cp $(APPNAME) test/$(APPNAME)
+
+clean:
+	rm -rf $(APPNAME)
+	rm -rf test

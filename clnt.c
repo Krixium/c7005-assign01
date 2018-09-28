@@ -1,5 +1,49 @@
+/*---------------------------------------------------------------------------------------
+--	SOURCE FILE:		    clnt.c - Collection of client related functions.
+--
+--	PROGRAM:		        bftp.exe
+--
+--	FUNCTIONS:		        
+--                          clnt(int argc, char *argv[])
+--                          void handleGET(char *serverAddress, char *filename)
+--                          void sendGETRequest(unsigned int sd, char *filename)
+--                          void parseGETResponse(unsigned int sd, FILE *file)
+--                          void handleSEND(char *serverAddress, char *filename)
+--                          void sendSENDRequest(unsigned int sd, char *filename, unsigned int fileSize)
+--                          void parseSENDResponse(unsigned int sd, FILE *file)
+--
+--	DATE:			        September 27, 2018
+--
+--	REVISIONS:		        N/A
+--
+--	DESIGNERS:		        Benny Wang
+--
+--	PROGRAMMERS:		    Benny Wang
+--
+--	NOTES:
+--                          This file contains functions that are used only for the client side of the protocol.
+---------------------------------------------------------------------------------------*/
 #include "clnt.h"
 
+
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                clnt
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void clnt(int argc, char *argv[])
+--                              argc:   The number of command line arguements passed by the user.
+--                              argv:   The command line arguements passed by the user.
+--
+-- NOTES:
+--                          This is the main entry point for the client.
+--------------------------------------------------------------------------------------------------*/
 void clnt(int argc, char *argv[])
 {
     char filename[MAX_FILENAME_SIZE];
@@ -26,6 +70,25 @@ void clnt(int argc, char *argv[])
     }
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                handleGET
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void handleGet(char *serverAddress, char *filename)
+--                              serverAddress:  The address of the server.
+--                              filename:       The name of the file to get.
+--
+-- NOTES:
+--                          Performs the GET request following the protocol. This funciton will open
+--                          and close files.
+--------------------------------------------------------------------------------------------------*/
 void handleGET(char *serverAddress, char *filename)
 {
     FILE *file;
@@ -92,6 +155,25 @@ void handleGET(char *serverAddress, char *filename)
     close(dataSocket);
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                sendGETRequest
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void sendGETRequest(unsigned int sd, char *filename)
+--                              sd:         The socket descriptor to write the GET request to.
+--                              filename:   The name of the file to request.
+--
+-- NOTES:
+--                          Creates a GET request header for filename and sends it on the socket
+--                          described by sd.
+--------------------------------------------------------------------------------------------------*/
 void sendGETRequest(unsigned int sd, char *filename)
 {
     char requestPacket[REQUEST_SIZE];
@@ -104,6 +186,25 @@ void sendGETRequest(unsigned int sd, char *filename)
     send(sd, requestPacket, REQUEST_SIZE, 0);
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                parseGETResponse
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void parseGETResponse(unsigned int sd, FILE *file)
+--                              sd:         The socket descriptor to read from.
+--                              file:       The file to write too.
+--
+-- NOTES:
+--                          Parses the GET response from ther server. Reads all the data from sd
+--                          and writes the data to file.
+--------------------------------------------------------------------------------------------------*/
 void parseGETResponse(unsigned int sd, FILE *file)
 {
     int fileSize, n;
@@ -139,6 +240,25 @@ void parseGETResponse(unsigned int sd, FILE *file)
     
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                handleSEND
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void handleSEND(char *serverAddress, char *filename)
+--                              serverAddress:  The address of the server.
+--                              fielname:       The name of the file.
+--
+-- NOTES:
+--                          Performs a SEND request following the protocol. This function will open
+--                          and close sockets and files.
+--------------------------------------------------------------------------------------------------*/
 void handleSEND(char *serverAddress, char *filename)
 {
     FILE *file;
@@ -220,6 +340,25 @@ void handleSEND(char *serverAddress, char *filename)
     close(dataSocket);
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                sendSENDRequest
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void sendSENDRequest(unsigned int sd, char *filename, unsigned int fileSize)
+--                              sd:         The socket descriptor to write requests onto.
+--                              filename:   The name of the file to send.
+--                              fileSize:   The size of the file to send.
+--
+-- NOTES:
+--                          Sends a SEND request for file filename of size fileSize to socket sd.
+--------------------------------------------------------------------------------------------------*/
 void sendSENDRequest(unsigned int sd, char *filename, unsigned int fileSize)
 {
     char requestPacket[REQUEST_SIZE];
@@ -233,6 +372,24 @@ void sendSENDRequest(unsigned int sd, char *filename, unsigned int fileSize)
     send(sd, requestPacket, REQUEST_SIZE, 0);
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                parseSENDResponse
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void parseSENDResponse(unsigned int sd, FILE *file)
+--                              sd:     The socket descriptor to write too.
+--                              file:   The file to send.
+--
+-- NOTES:
+--                          Writes file to the socket sd.
+--------------------------------------------------------------------------------------------------*/
 void parseSENDResponse(unsigned int sd, FILE *file)
 {
     char ackBuffer[2];
