@@ -167,7 +167,7 @@ void handleGET(char *serverAddress, char *filename)
 -- PROGRAMMER:              Benny Wang
 --
 -- INTERFACE:               void sendGETRequest(unsigned int sd, char *filename)
---                              sd:         The socket descriptor to write the GET request to.
+--                              sd:         The socket descriptor to write the GET request too.
 --                              filename:   The name of the file to request.
 --
 -- NOTES:
