@@ -207,6 +207,7 @@ void handleSEND(char *serverAddress, char *filename)
     {
         perror("Could not accept connection");
         fclose(file);
+        close(listenSocket);
         return;
     }
     close(listenSocket);
