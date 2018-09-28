@@ -1,5 +1,51 @@
+/*---------------------------------------------------------------------------------------
+--	SOURCE FILE:		    srvr.c - Colleciton of server related functions.
+--
+--	PROGRAM:		        bftp
+--
+--	FUNCTIONS:		        
+--                          void srvr(int argc, char *argv[])
+--                          void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)
+--                          void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer)
+--                          void sendFileOverTCP(FILE *file, unsigned int sd)
+--                          void respondSENDRequest(unsigned int sd, struct sockaddr_in *clientAddress, char *buffer)
+--                          void sendACK(unsigned int sd)
+--                          void parseSENDPayload(unsigned int sd, FILE *file, int length);
+--
+--	DATE:			        September 27, 2018
+--
+--	REVISIONS:		        N/A
+--
+--	DESIGNERS:		        Benny Wang
+--
+--	PROGRAMMERS:		    Benny Wang
+--
+--	NOTES:
+--                          This file contains functions that are used only for the server side of the protocol.
+---------------------------------------------------------------------------------------*/
 #include "srvr.h"
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                srvr
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void srvr(int argc, char *argv[])
+--                              argc:   The number of command line arguements.
+--                              argv:   The command line arguements.
+--
+-- NOTES:
+--                          The main entry point for srvr. A socket is created to listen for requests
+--                          and whenever a new request is received the function will fork the server.
+--                          The parent process will continue to listen for new requests while the child
+--                          process will handle the newly received request.
+--------------------------------------------------------------------------------------------------*/
 void srvr(int argc, char *argv[])
 {
     pid_t pid;
@@ -40,10 +86,12 @@ void srvr(int argc, char *argv[])
         if (pid == -1)
         {
             perror("Fork error");
+            close(newSocket);
         }
         else if (pid == 0)
         {
             serveClient(newSocket, &client);
+            close(newSocket);
         }
         else
         {
@@ -52,6 +100,26 @@ void srvr(int argc, char *argv[])
     }
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                serveClient
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)
+--                              clientSocket:   The socket descriptor that is connected to the client.
+--                              clientAddress:  The address of the client.
+--
+-- NOTES:
+--                          Reads the request from the client and then parses it. Depending on the
+--                          request the program will either handle a GET request, SEND request, or
+--                          ignore the request if it is invalid.
+--------------------------------------------------------------------------------------------------*/
 void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)
 {
     printf("Client received, address: %s\n", inet_ntoa(clientAddress->sin_addr));
@@ -71,16 +139,33 @@ void serveClient(unsigned int clientSocket, struct sockaddr_in *clientAddress)
     }
     else if (buffer[1] == 'S')
     {
-        respondSENDRequest(clientSocket, clientAddress, buffer);
+        respondSENDRequest(clientAddress, buffer);
     }
     else
     {
         perror("Invalid request");
     }
-
-    close(clientSocket);
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                respondGETRequest
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer)
+--                              clientAddress:  The address of the client.
+--                              buffer:         The buffer of the data that was received.
+--
+-- NOTES:
+--                          Responds to a GET request. If the request is valid a file is openned and
+--                          is sent along the data port. Otherwise, the request is ignored.
+--------------------------------------------------------------------------------------------------*/
 void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer)
 {
     unsigned int dataSocket;
@@ -137,6 +222,25 @@ void respondGETRequest(struct sockaddr_in *clientAddress, char *buffer)
     printf("Socket closed\n");
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                sendFileOverTCP
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void sendFileOverTCP(FILE *file, unsigned int sd)
+--                              file:   The file to send.
+--                              sd:     The TCP socket to send on.
+--
+-- NOTES:
+--                          Writes all of the contents of file onto sd with the appropriate header
+--                          preceding it.
+--------------------------------------------------------------------------------------------------*/
 void sendFileOverTCP(FILE *file, unsigned int sd)
 {
     // create header
@@ -153,7 +257,27 @@ void sendFileOverTCP(FILE *file, unsigned int sd)
     printf("File sent\n");
 }
 
-void respondSENDRequest(unsigned int sd, struct sockaddr_in *clientAddress, char *buffer)
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                respondSENDRequest
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void respondSENDRequest(struct sockaddr_in *clientAddress, char *buffer)
+--                              clientAddress:      The address of the client.
+--                              buffer:             The buffer of the data that was received.
+--
+-- NOTES:
+--                          Responds to a send request. If the request is valid, creates a new file
+--                          and writes all data received from the data port into it. Otherwise, the
+--                          request is ignored.
+--------------------------------------------------------------------------------------------------*/
+void respondSENDRequest(struct sockaddr_in *clientAddress, char *buffer)
 {
     printf("Send request received\n");
 
@@ -205,6 +329,23 @@ void respondSENDRequest(unsigned int sd, struct sockaddr_in *clientAddress, char
     close(dataSocket);
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                sendACK
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void sendACK(unsigned int sd)
+--                              sd:     The socket to send the ACK on.
+--
+-- NOTES:
+--                          Writes an ACK packet to sd.
+--------------------------------------------------------------------------------------------------*/
 void sendACK(unsigned int sd)
 {
     char buffer[2];
@@ -214,6 +355,26 @@ void sendACK(unsigned int sd)
     send(sd, buffer, 2, 0);
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                parseSENDPayload
+--
+-- DATE:                    September 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void parseSENDPayload(unsigned int sd, FILE *file, int length)
+--                              sd:     The socket to read on.
+--                              file:   The file to write data into.
+--                              length: The length of the data to be received.
+--
+-- NOTES:
+--                          If the header is valid, all the data in sd is read and written into file
+--                          until length amount of data has been read and written.
+--------------------------------------------------------------------------------------------------*/
 void parseSENDPayload(unsigned int sd, FILE *file, int length)
 {
     int n;
