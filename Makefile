@@ -13,7 +13,10 @@ debug:
 test:
 	make debug
 	mkdir test
-	cp $(APPNAME) test/$(APPNAME)
+	mkdir test/clnt
+	mkdir test/srvr
+	cp $(APPNAME) test/clnt/$(APPNAME)
+	cp $(APPNAME) test/srvr/$(APPNAME)
 
 clean:
 	rm -rf $(APPNAME)
