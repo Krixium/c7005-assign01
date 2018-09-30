@@ -267,15 +267,24 @@ void handleSEND(char *serverAddress, char *filename)
     unsigned int serverSocket, listenSocket, dataSocket;
     struct sockaddr_in serverAddr, recvAddr;
 
+    file = fopen(filename, "r");
+    if (file == NULL)
+    {
+        perror("Could not open file");
+        return;
+    }
+
     if (!createTCPSocket(&serverSocket))
     {
         perror("Could not create socket");
+        fclose(file);
         return;
     }
 
     if (!createAddrFromHostname(&serverAddr, serverAddress, LISTEN_PORT))
     {
         perror("Could not establish host");
+        fclose(file);
         return;
     }
 
@@ -285,18 +294,11 @@ void handleSEND(char *serverAddress, char *filename)
     {
         perror("Could not connect");
         close(serverSocket);
+        fclose(file);
         return;
     }
 
     printf("Server connected\n");
-
-    file = fopen(filename, "r");
-    if (file == NULL)
-    {
-        perror("Could not open file");
-        close(serverSocket);
-        return;
-    }
 
     // make request
     sendSENDRequest(serverSocket, filename, getFileSize(file));

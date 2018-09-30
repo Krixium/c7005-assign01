@@ -174,9 +174,9 @@ int bindListenSocket(unsigned int sd, short port)
 int readFromSocket(unsigned int socket, char * buffer, unsigned int len)
 {
     int n, bytesToRead, total;
-    bytesToRead = len;
-
     char * bufferPointer;
+
+    bytesToRead = len;
     bufferPointer = buffer;
 
     total = 0;
