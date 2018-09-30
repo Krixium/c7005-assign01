@@ -133,6 +133,7 @@ void handleGET(char *serverAddress, char *filename)
     if (!bindListenSocket(listenSocket, DATA_PORT))
     {
         perror("Cannot bind socket");
+        close(listenSocket);
         return;
     }
 
@@ -312,6 +313,7 @@ void handleSEND(char *serverAddress, char *filename)
     if (!bindListenSocket(listenSocket, DATA_PORT))
     {
         perror("Cannot bind socket");
+        close(listenSocket);
         fclose(file);
         return;
     }

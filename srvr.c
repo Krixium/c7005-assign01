@@ -64,6 +64,7 @@ void srvr(int argc, char *argv[])
     if (!bindListenSocket(acceptSocket, LISTEN_PORT))
     {
         perror("Cannot bind socket.");
+        close(acceptSocket);
         return;
     }
 
@@ -292,8 +293,6 @@ void respondSENDRequest(struct sockaddr_in *clientAddress, char *buffer)
     printf("SEND request received, filename: %s\n", filename);
 
     memcpy(&length, buffer + REQUEST_SIZE - sizeof(unsigned int), sizeof(unsigned int));
-
-    printf("Sending ACK\n");
 
     if (!createTCPSocket(&dataSocket))
     {
